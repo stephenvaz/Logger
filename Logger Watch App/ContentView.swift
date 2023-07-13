@@ -19,7 +19,7 @@ struct ContentView: View {
         NavigationView {
             ScrollView(showsIndicators: true) {
                 VStack(spacing: 18) {
-                    HStack(spacing: 15) {
+                    HStack(spacing: 12) {
                         Button(action: {
                             self.logStarting.toggle()
                             
