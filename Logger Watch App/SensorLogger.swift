@@ -34,29 +34,6 @@ class SensorLogManager: NSObject, ObservableObject {
     
     private var csvText = ""
 
-    // ...
-
-//    @objc private func startLogSensor() {
-//        // ...
-//
-//        // Append the sensor data to the CSV text
-//        let csvLine = "\(self.accX),\(self.accY),\(self.accZ),\(self.gyrX),\(self.gyrY),\(self.gyrZ)\n"
-//        csvText.append(csvLine)
-//
-//        // ...
-//
-//        // Print the data
-//        print("Watch: acc (\(self.accX), \(self.accY), \(self.accZ)), gyr (\(self.gyrX), \(self.gyrY), \(self.gyrZ))")
-//    }
-
-    // ...
-
-//    func stopUpdate() {
-//        // ...
-//
-//        // Save the CSV text to a file
-//        saveCSVToFile()
-//    }
 
     private func saveCSVToFile() {
         let fileName = "sensor_data.csv"
@@ -91,22 +68,6 @@ class SensorLogManager: NSObject, ObservableObject {
             self.accY = 0
             self.accZ = 0
         }
-        
-//        if let data = motionManager?.gyroData {
-//            let x = data.rotationRate.x
-//            let y = data.rotationRate.y
-//            let z = data.rotationRate.z
-//
-//            self.gyrX = x
-//            self.gyrY = y
-//            self.gyrZ = z
-//        }
-//        else {
-//            self.gyrX = Double.nan
-//            self.gyrY = Double.nan
-//            self.gyrZ = Double.nan
-//        }
-        
         if let data = motionManager?.deviceMotion {
             let x = data.rotationRate.x
             let y = data.rotationRate.y
@@ -127,15 +88,8 @@ class SensorLogManager: NSObject, ObservableObject {
         let csvLine = "A: \(self.accX),\(self.accY),\(self.accZ)\nG: \(self.gyrX),\(self.gyrY),\(self.gyrZ)\n\n"
         csvText.append(csvLine)
 
-        // ...
+//        print("Watch: acc (\(self.accX), \(self.accY), \(self.accZ)), gyr (\(self.gyrX), \(self.gyrY), \(self.gyrZ))")
 
-        // Print the data
-        print("Watch: acc (\(self.accX), \(self.accY), \(self.accZ)), gyr (\(self.gyrX), \(self.gyrY), \(self.gyrZ))")
-        
-//       write this data to a csv
-//        print("test")
-       // db write
-        // csv
         
     }
     
@@ -144,18 +98,11 @@ class SensorLogManager: NSObject, ObservableObject {
             motionManager?.startAccelerometerUpdates()
         }
         
-//        if motionManager!.isGyroAvailable {
-//            motionManager?.startGyroUpdates()
-//        }
-        
-        // Gyroscopeの生データの代わりにDeviceMotionのrotationRateを取得する
         if motionManager!.isDeviceMotionAvailable {
             motionManager?.startDeviceMotionUpdates()
         }
         
         self.samplingFrequency = freq
-        
-        // プル型でデータ取得
         self.timer = Timer.scheduledTimer(timeInterval: 1.0 / freq,
                            target: self,
                            selector: #selector(self.startLogSensor),

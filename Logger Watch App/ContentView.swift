@@ -9,11 +9,63 @@ import SwiftUI
 import WatchConnectivity
 
 struct ContentView: View {
+    @State private var showAlert = false
+    @State private var alertMessage = ""
     @State private var logStarting = false
     @State private var showCSVData = false
     @State private var csvData = ""
   
     @ObservedObject var sensorLogger = SensorLogManager()
+    
+//    upload
+    private func exportData() {
+            let fileName = "sensor_data.csv"
+            guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+                print("Error: Failed to access document directory.")
+                return
+            }
+            
+            let fileURL = documentDirectory.appendingPathComponent(fileName)
+            
+            do {
+                let csvData = try Data(contentsOf: fileURL)
+                
+                let url = URL(string: "http://localhost:3000/upload")!
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                
+                let boundary = UUID().uuidString
+                let contentType = "multipart/form-data; boundary=\(boundary)"
+                request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+                
+                var body = Data()
+                body.append("--\(boundary)\r\n".data(using: .utf8)!)
+                body.append("Content-Disposition: form-data; name=\"csvFile\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+                body.append("Content-Type: text/csv\r\n\r\n".data(using: .utf8)!)
+                body.append(csvData)
+                body.append("\r\n".data(using: .utf8)!)
+                body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+                
+                request.httpBody = body
+                
+                let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
+                    if let error = error {
+                        print("Error while uploading CSV file: \(error)")
+                        alertMessage = "Upload Error"
+                        showAlert = true
+                    } else if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                        print("CSV file uploaded successfully. Response: \(responseString)")
+                        alertMessage = "Upload Successful"
+                        showAlert = true
+                    }
+                }
+                
+                task.resume()
+            } catch {
+                print("Error while reading CSV file: \(error)")
+            }
+        }
+//    upload
     
     var body: some View {
         NavigationView {
@@ -67,8 +119,19 @@ struct ContentView: View {
                         
                         if showCSVData {
                             VStack(spacing: 5) {
-                                Text("CSV Data")
-                                    .font(.headline)
+                                HStack(spacing: 15) {
+                                    Text("CSV Data")
+                                        .font(.headline)
+                                    Button(action: {
+                                                            exportData()
+                                                        }) {
+                                                            Image(systemName: "square.and.arrow.up")
+                                                                .font(.system(size: 15))
+                                                                .foregroundColor(.green)
+                                                        }
+                                                        .frame(width: 40.0)
+                                }
+                                
                                 
                                 Text(csvData)
                                     .font(.system(.body))
@@ -85,6 +148,18 @@ struct ContentView: View {
                 .padding(.horizontal, 10)
             }
             .navigationBarTitle("Logger")
+//            .overlay(
+//                Group {
+//                    if showAlert {
+//                        SnackbarView(message: alertMessage, duration: 3)
+//                            .padding(.bottom, 100) // Adjust the position of the snackbar as needed
+//                            .transition(.slide)
+//                    }
+//                }
+//            )
+        }
+        .alert(isPresented: $showAlert) {
+            Alert(title: Text("Upload Status"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
         }
     }
     
@@ -148,6 +223,37 @@ struct SensorDataView: View {
         .cornerRadius(12)
     }
 }
+
+//struct SnackbarView: View {
+//    let message: String
+//    let duration: Double
+//    @State private var isShowing = true
+//
+//    var body: some View {
+//        VStack {
+//            Spacer()
+//
+//            HStack {
+//                Text(message)
+//                    .foregroundColor(.white)
+//                    .padding(.horizontal, 16)
+//                    .padding(.vertical, 12)
+//                    .background(Color.black)
+//                    .cornerRadius(8)
+//            }
+//            .frame(maxWidth: .infinity)
+//            .padding(.horizontal, 20)
+//            .opacity(isShowing ? 1 : 0)
+//            .animation(.easeInOut(duration: 0.3))
+//        }
+//        .onAppear {
+//            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+//                isShowing = false
+//            }
+//        }
+//    }
+//}
+
 
 
 struct ContentView_Previews: PreviewProvider {
