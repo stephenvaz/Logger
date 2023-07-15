@@ -1,6 +1,7 @@
 import express from "express"
 import multer from "multer";
 import moment from "moment";
+import crypto from "crypto";
 
 const app = express();
 
@@ -14,7 +15,7 @@ app.listen(3000, () => {
 });
 
 app.get("/", (req, res) => {
-    res.send("v1.0.0");
+    res.send("v0.6.9");
 });
 
 
@@ -30,10 +31,10 @@ const storage = multer.diskStorage({
     destination: 'uploads/',
     filename: (req, file, cb) => {
         const originalname = file.originalname;
-        const name = originalname.split('.')[0];
-        const extension = originalname.split('.').pop();
+        const [name, ext] = originalname.split('.');
         const timestamp = moment().format('DD-MM-YYYY_HH:mm:ss');
-        const filename = `${name}_${timestamp}.${extension}`;
+        const randomStr = crypto.randomBytes(3).toString('hex');
+        const filename = `${name}_${timestamp}_${randomStr}.${ext}`;
         cb(null, filename);
     }
 });
@@ -48,7 +49,6 @@ const multerErrWrapper = (req, res, next) => {
             return res.status(500).json({ message: err.message });
         }
         next();
-        // Everything went fine.
     });
 };
 
