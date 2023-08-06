@@ -14,6 +14,11 @@ struct ContentView: View {
     @State private var logStarting = false
     @State private var showCSVData = false
     @State private var csvData = ""
+    
+    @State private var elapsedTime = 0  // <-- Add this line
+        
+        // Start or stop a timer based on the logStarting state
+    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
   
     @ObservedObject var sensorLogger = SensorLogManager()
     
@@ -30,7 +35,8 @@ struct ContentView: View {
             do {
                 let csvData = try Data(contentsOf: fileURL)
                 
-                let url = URL(string: "http://localhost:3000/upload")!
+//                let url = URL(string: "http://localhost:3000/upload")!
+                let url = URL(string: "https://thalla.serveo.net/upload")!
                 var request = URLRequest(url: url)
                 request.httpMethod = "POST"
                 
@@ -77,8 +83,12 @@ struct ContentView: View {
                             
                             if self.logStarting {
                                 self.sensorLogger.startUpdate(50.0)
+                                self.elapsedTime = 0
+
                             } else {
                                 self.sensorLogger.stopUpdate()
+//                                self.timer.upstream.connect().cancel()
+
                             }
                         }) {
                             Image(systemName: self.logStarting ? "pause.circle.fill" : "play.circle.fill")
@@ -86,7 +96,6 @@ struct ContentView: View {
                                 .foregroundColor(.blue)
                         }
                         .frame(width: 45.0, height: 27.0)
-
                         
                         Button(action: {
                             showCSVData.toggle()
@@ -112,6 +121,14 @@ struct ContentView: View {
                     }.padding(.top)
                     
                     VStack(spacing: 5) {
+                        
+                        Text("Time: \(timeString(time: elapsedTime))") // <-- Modify this line
+                            .onReceive(timer) { _ in
+                                if self.logStarting {
+                                    self.elapsedTime += 1
+                                }
+                            }
+                        
                         SensorDataView(title: "Accelerometer", value: "\(self.sensorLogger.accX), \(self.sensorLogger.accY), \(self.sensorLogger.accZ)")
 
                         
@@ -148,19 +165,17 @@ struct ContentView: View {
                 .padding(.horizontal, 10)
             }
             .navigationBarTitle("Logger")
-//            .overlay(
-//                Group {
-//                    if showAlert {
-//                        SnackbarView(message: alertMessage, duration: 3)
-//                            .padding(.bottom, 100) // Adjust the position of the snackbar as needed
-//                            .transition(.slide)
-//                    }
-//                }
-//            )
         }
         .alert(isPresented: $showAlert) {
             Alert(title: Text("Upload Status"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
         }
+    }
+    
+    private func timeString(time: Int) -> String {
+        let hours = Int(time) / 3600
+        let minutes = Int(time) / 60 % 60
+        let seconds = Int(time) % 60
+        return String(format: "%02i:%02i:%02i", hours, minutes, seconds)
     }
     
     private func readCSVFromFile() -> String {
@@ -216,43 +231,13 @@ struct SensorDataView: View {
                     .foregroundColor(.primary)
             }
             
-            Spacer() // Occupies the remaining space
+            Spacer()
         }
         .padding(5)
         .background(Color.secondary.opacity(0.1))
         .cornerRadius(12)
     }
 }
-
-//struct SnackbarView: View {
-//    let message: String
-//    let duration: Double
-//    @State private var isShowing = true
-//
-//    var body: some View {
-//        VStack {
-//            Spacer()
-//
-//            HStack {
-//                Text(message)
-//                    .foregroundColor(.white)
-//                    .padding(.horizontal, 16)
-//                    .padding(.vertical, 12)
-//                    .background(Color.black)
-//                    .cornerRadius(8)
-//            }
-//            .frame(maxWidth: .infinity)
-//            .padding(.horizontal, 20)
-//            .opacity(isShowing ? 1 : 0)
-//            .animation(.easeInOut(duration: 0.3))
-//        }
-//        .onAppear {
-//            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-//                isShowing = false
-//            }
-//        }
-//    }
-//}
 
 
 
